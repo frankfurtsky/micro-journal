@@ -82,7 +82,7 @@ void SD_setup()
     const char *firmware_filename = "/firmware_rev_6.bin";
 #endif
 #ifdef ENV_EPAPER
-    const char *firmware_filename = "/firmware_rev_7.bin";
+    const char *firmware_filename = "/firmware.bin";
 #endif
 
     if (SD.exists(firmware_filename))

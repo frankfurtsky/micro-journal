@@ -7,7 +7,8 @@
 #include <cstring> // For memset
 
 #define BUFFER_SIZE 4000
-
+#include <FS.h>
+#include <SD.h>
 //
 class FileBuffer
 {
@@ -40,7 +41,12 @@ public:
     size_t fileSize;
     //
     size_t seekPos;
-    //
+    // holds the word count of the entire file - T.
+    size_t wordCountFile;
+    // holds the word count of the buffer - T.
+    size_t wordCountBuffer;
+    // holds the word count of the file data that is not in the current buffer - T.
+    size_t wordCountTotal;
     int cursorPos;
     int cursorLine;
     int cursorLinePos;
@@ -53,6 +59,15 @@ public:
 
     //
     int getBufferSize();
+    // calculate word count of the buffer - T.
+    int getWordCountBuffer();
+    // calculate word count of the file (excluding the buffer) - T.
+    int getWordCountFile(File currentFile);
+    
+    // update total word count - T.
+    int updateWordCountTotal();
+    // Count words  when the file is loaded - T.
+    void initializeWordCount(File currentFile);
     void addChar(char c);
     void removeLastChar();
     void removeCharAtCursor();

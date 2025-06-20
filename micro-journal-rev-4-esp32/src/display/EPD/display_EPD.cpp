@@ -80,7 +80,8 @@ void display_EPD_loop()
                 Menu_setup();
             else
                 // loop
-                Menu_render();
+                 Menu_render();
+                
         }
         else if (screen == WAKEUPSCREEN)
         {
@@ -120,6 +121,8 @@ void display_EPD_keyboard(char key)
 {
     JsonDocument &app = app_status();
     int screen = app["screen"].as<int>();
+     
+    app_log("Coming from SCREEN: %d\n", screen);
 
     if (screen == WORDPROCESSOR)
     {
@@ -128,6 +131,7 @@ void display_EPD_keyboard(char key)
     }
     else if (screen == MENUSCREEN)
     {
+        app_log("Going to MENU SCREEN: %d\n", screen);
         Menu_keyboard(key);
     }
     else if (screen == ERRORSCREEN)

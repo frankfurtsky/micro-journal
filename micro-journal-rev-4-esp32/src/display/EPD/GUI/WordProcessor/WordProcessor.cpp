@@ -25,7 +25,7 @@ const int statusY = EPD_HEIGHT - status_height - 5;
 
 // clear screen
 bool clear_full = false;
-bool clear_request = true;
+//bool clear_request = true;
 bool cleared = true;
 bool backspaced = false;
 
@@ -73,10 +73,10 @@ void WP_render()
 
         //
         clear_full = false;
-        clear_request = true;
+        cleared = true;
     }
 
-    // Clear Background
+ /*    // Clear Background
     if (clear_request)
     {
         //
@@ -87,23 +87,25 @@ void WP_render()
         cleared = true;
 
         //
-        debug_log("WP_render::full refresh requested\n");
-    }
+        app_log("WP_render::full refresh requested\n");
+    } */
 
     //
     WP_check_saved();
     WP_check_sleep();
 
-    // Bottom Status
+    
+
+   
+   
+   
+     // Bottom Status
     WP_render_status();
-
-    // BLINK CURSOR
+     // BLINK CURSOR
     WP_render_cursor();
-
+    
     // RENDER TEXT
     WP_render_text();
-
-    // clear background flag off
     cleared = false;
 }
 
@@ -204,13 +206,25 @@ void WP_render_text()
     if (cursorLine - startLine > rows)
     {
         // clear background
-        epd_poweron();
-        epd_clear_quick(epd_full_screen(), 4, 50);
-        epd_poweroff_all();
+        //epd_poweron();
+        //epd_clear_quick(epd_full_screen(), 4, 50);
+        //epd_poweroff_all();
+        Rect_t area = display_rect(
+                0,
+                0, EPD_WIDTH,
+                EPD_HEIGHT - status_height);
+                
 
+            epd_poweron();
+            epd_clear_quick(area, 8, 50);
+            epd_poweroff_all();
+
+        
         //
         cleared = true;
-        clear_request = true; // status bar should be refreshed
+        // Changed -T.
+       // WP_render_status();
+       // clear_request = true; // status bar should be refreshed
 
         //
         startLine = max(cursorLine - 1, 0);
@@ -219,6 +233,8 @@ void WP_render_text()
                   startLine,
                   rows,
                   totalLine);
+        
+            
     }
 
     // when cursor reaches the top and it's time to show the previous page
@@ -239,12 +255,22 @@ void WP_render_text()
                   startLine);
 
         // clear background
+        //epd_poweron();
+        //epd_clear_quick(epd_full_screen(), 4, 50);
+        //epd_poweroff_all();
+        //Only clear the text part, leaving the status bar intact.
+        Rect_t area = display_rect(
+                0,
+                0, EPD_WIDTH,
+                EPD_HEIGHT - status_height);
+                
+
         epd_poweron();
-        epd_clear_quick(epd_full_screen(), 4, 50);
+        epd_clear_quick(area, 8, 50);
         epd_poweroff_all();
 
-        //
-        cleared = true;
+        cleared = true;  
+       
     }
 
     //
@@ -276,6 +302,7 @@ void WP_render_text()
         //
         // render frame to the display
         display_draw_buffer();
+        
     }
 
     // handle backspace
@@ -386,10 +413,19 @@ void WP_render_text()
             // when line changes during the edit do full refresh
 
             // clear background
+            //epd_poweron();
+            //epd_clear_quick(epd_full_screen(), 4, 50);
+            //epd_poweroff();
+            //clear_request = true;
+            Rect_t area = display_rect(
+                0,
+                0, EPD_WIDTH,
+                EPD_HEIGHT - status_height);
+                
+
             epd_poweron();
-            epd_clear_quick(epd_full_screen(), 4, 50);
-            epd_poweroff();
-            clear_request = true;
+            epd_clear_quick(area, 8, 50);
+            epd_poweroff_all();
 
             editing = false;
             debug_log("WP_render_text::editing line change. %d %d %d %d\n", cursorLine, cursorLine_prev, cursorPos, cursorPos_prev);
@@ -547,10 +583,13 @@ void WP_check_sleep()
 // display save status
 // FILE INDEX | BYTES | SAVED | LAYOUT
 // 160 | 200 ---- 200 | 100
-#define STATUS_REFRESH 300
+#define STATUS_REFRESH 400
 void WP_render_status()
 {
-    //
+    // Changed - T.
+    String label;
+    
+
     JsonDocument &app = app_status();
 
     // status start Y position
@@ -560,24 +599,34 @@ void WP_render_status()
     static bool saved_prev = false;
     static size_t filesize_prev = 0;
     size_t filesize = Editor::getInstance().fileBuffer.seekPos + Editor::getInstance().fileBuffer.getBufferSize();
-
+    // status word count - T.
+    size_t wordcount = Editor::getInstance().fileBuffer.updateWordCountTotal();
     // Full Redraw
     // Draw non-refreshing section
-    if (cleared)
+    if (cleared )
     {
+        app_log("Rendering status bar through if (cleared)...\n");
         ////////////////////////////////////////
         // FILE INDEX 25 - 225
         int cursorX = 25;
-        String file = format("FILE %d", app["config"]["file_index"].as<int>());
-        writeln((GFXfont *)&systemFont, file.c_str(), &cursorX, &cursorY, display_EPD_framebuffer());
-        ////////////////////////////////////////
+        String info = format("FILE %d", app["config"]["file_index"].as<int>());
+        writeln((GFXfont *)&systemFont, info.c_str(), &cursorX, &cursorY, display_EPD_framebuffer());
+       ////////////////////////////////////////
 
-        ////////////////////////////////////////
-        // FILE SIZE
-        cursorX = 200;
+        // redraw the new number
+        // Changed - T.
+      /*    cursorX = 150;
         String filesizeFormatted = formatNumber(filesize);
-        writeln((GFXfont *)&systemFont, filesizeFormatted.c_str(), &cursorX, &cursorY, NULL);
-        ////////////////////////////////////////
+        label = "C: ";
+        info = label+filesizeFormatted;
+        writeln((GFXfont *)&systemFont, info.c_str(), &cursorX, &cursorY, display_EPD_framebuffer());
+        
+        // Redraw the word count -T.
+        cursorX = 400;
+        String wordcountFormatted = formatNumber(wordcount);
+        label = "W: ";
+        info = label + wordcountFormatted;
+        writeln((GFXfont *)&systemFont, info.c_str(), &cursorX, &cursorY, display_EPD_framebuffer()); */
 
         ////////////////////////////////////////
         // KEYBOARD LAYOUT 860 - 960
@@ -586,13 +635,16 @@ void WP_render_status()
             layout = "US"; // defaults to US layout
         cursorX = 860;
         writeln((GFXfont *)&systemFont, layout.c_str(), &cursorX, &cursorY, display_EPD_framebuffer());
-        ////////////////////////////////////////
+    
     }
 
     // FILE SIZE DRAWS WHEN STOPPED EDITING FOR A WHILE
     static int last = millis();
     static bool debouncing = false;
-    if (filesize != filesize_prev)
+    
+    //changed - T.
+
+    if (filesize != filesize_prev )
     {
         // debounce for status_refresh amount
         last = millis();
@@ -601,46 +653,57 @@ void WP_render_status()
         filesize_prev = filesize;
         debouncing = true;
     }
-
-    //
-    if (debouncing == true && last + STATUS_REFRESH < millis())
+    
+    if ((debouncing == true && last + STATUS_REFRESH < millis() )||cleared)
     {
-        //
+         app_log("Rendering status bar through if (debouncing)...\n");
+         app_log( "debouncing: %d, last+STATUS_REFRESH: %d, cleared %d\n ",debouncing,last+STATUS_REFRESH, cleared);
+         //
         last = millis();
         debouncing = false;
 
         // FILE SIZE 200 - 400
-        int cursorX = 200;
+        int cursorX = 150;
 
         // remove previous text
         Rect_t area = display_rect(
-            cursorX - 10,
+            cursorX,
             statusY,
-            210,
+            450,
             status_height);
 
         epd_poweron();
         epd_clear_quick(area, 4, 50);
 
         // redraw the new number
+        // Changed - T.
         String filesizeFormatted = formatNumber(filesize);
-        writeln((GFXfont *)&systemFont, filesizeFormatted.c_str(), &cursorX, &cursorY, NULL);
+        label = "C: ";
+        String info = label+filesizeFormatted;
+        writeln((GFXfont *)&systemFont, info.c_str(), &cursorX, &cursorY, NULL);
+        
+        // Redraw the word count -T.
+        cursorX = 400;
+        String wordcountFormatted = formatNumber(wordcount);
+        label = "W: ";
+        info = label + wordcountFormatted;
+        writeln((GFXfont *)&systemFont, info.c_str(), &cursorX, &cursorY, NULL);
         epd_poweroff_all();
     }
 
     /////////////////////////////////////
     // DISPLAY SAVED STATE
     /////////////////////////////////////
-    if (Editor::getInstance().saved != saved_prev || cleared)
+    if (Editor::getInstance().saved != saved_prev || cleared) 
     {
         debug_log("Update Saved Status\n");
-        int cursorX = 550;
+        int cursorX = 650;
 
         // clear the status area
         Rect_t area = display_rect(
-            cursorX - 10,
+            cursorX,
             statusY,
-            210,
+            170,
             status_height);
 
         //
@@ -679,10 +742,9 @@ void WP_keyboard(char key)
     {
         // Save before transitioning to the menu
         Editor::getInstance().saveFile();
-
-        //
+        
         app["screen"] = MENUSCREEN;
-
+        
         //
         debug_log("WP_keyboard::Moving to Menu Screen\n");
     }

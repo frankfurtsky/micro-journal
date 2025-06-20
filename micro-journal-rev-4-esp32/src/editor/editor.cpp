@@ -413,7 +413,10 @@ void Editor::keyboard(char key)
         // set saved flag to false
         this->saved = false;
     }
-
+     // update the word counter - changed by T.
+    
+    fileBuffer.updateWordCountTotal();
+    
     // update the screen buffer
     screenBuffer.Update(fileBuffer);
 }

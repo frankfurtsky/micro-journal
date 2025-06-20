@@ -74,12 +74,15 @@ void FileBuffer::load(String fileName)
 
     // Determine file size and set buffer accordingly
     fileSize = file.size();
+
+    
     app_log("File: %s of size: %d\n", fileName, fileSize);
 
     // calcualte the file offset
     seekPos = 0;
-    int stepSize = BUFFER_SIZE / 2; // use half of the buffer
-    if (fileSize > 0)
+    int stepSize = BUFFER_SIZE/2; // use half of the buffer
+    // Changed - .T
+    /* if (fileSize > 0)
     {
         // this offset will offer last portion of the buffer
         seekPos = (fileSize / stepSize) * stepSize;
@@ -94,7 +97,9 @@ void FileBuffer::load(String fileName)
         else
             // defensive code in order for the offset not to go negative (MAX in unsigned in)
             seekPos = 0;
-    }
+    } */
+   
+    seekPos =  fileSize > stepSize ? fileSize - stepSize : 0;
 
     // move the file position to offset
     if (!file.seek(seekPos))
@@ -116,16 +121,19 @@ void FileBuffer::load(String fileName)
 
     // Read file content into text buffer
     bufferSize = 0;
-    buffer[bufferSize] = '\0';
     while (file.available())
     {
-        buffer[bufferSize++] = file.read();
+        char c = file.read();
+        buffer[bufferSize++] = c;
     }
     cursorPos = bufferSize;
-
-    //
+    buffer[bufferSize] = '\0';
+    
+    initializeWordCount(file);   
     file.close();
     delay(100);
+
+    
 
     // log
     debug_log("FileBuffer::load::Read size: %d, seek: %d, buffer: %d, cursor: %d\n", fileSize, seekPos, bufferSize, cursorPos);
@@ -192,8 +200,12 @@ void FileBuffer::save()
 
     //
     fileSize = file.size();
+
     file.close();
+    
     delay(100);
+    // update word count -T.
+    updateWordCountTotal();
 }
 
 //
@@ -217,6 +229,82 @@ int FileBuffer::getBufferSize()
 {
     return bufferSize;
 }
+// Count words in the buffer
+int FileBuffer::getWordCountBuffer()
+{
+    // Function to count words in a C-style char buffer
+
+    int count = 0;
+    bool inWord = false;
+
+    for (size_t i = 0; buffer[i] != '\0'; ++i) {
+        if (std::isalnum(buffer[i])) {
+            if (!inWord) {
+                inWord = true;
+                ++count;
+            }
+        } else {
+            inWord = false;
+        }
+    }
+
+    return count;
+
+}
+// Count words in the file (excluding the buffer)
+int FileBuffer::getWordCountFile(File currentFile)
+{
+
+  int wordCount = 0;
+  bool inWord = false;
+  
+  uint32_t fileSize = currentFile.size();
+
+  // Size of the data not going into the buffer
+  int sizeOfDataNotInBuffer = fileSize - (BUFFER_SIZE/2);
+  
+  //Move the pointer to start of the file
+  currentFile.seek(0);
+  int readLimit = (fileSize > (BUFFER_SIZE/2)) ? sizeOfDataNotInBuffer : 0;
+ 
+  app_log("read limit:  %d \n",readLimit);
+  // Count the words until the part of the file that will go into the buffer
+  uint32_t bytesRead = 0;
+  while (currentFile.available() && bytesRead < readLimit) {
+    char c = currentFile.read();
+    bytesRead++;
+
+    if (isAlphaNumeric(c)) {
+      if (!inWord) {
+        inWord = true;
+        wordCount++;
+      }
+    } else {
+      inWord = false;
+    }
+  
+  }
+  
+    app_log("Words in file:  %d \n",wordCount);
+  return wordCount;
+
+}
+
+int FileBuffer::updateWordCountTotal()
+{
+    // update word count -T.
+    wordCountTotal =   wordCountFile + getWordCountBuffer();
+    return wordCountTotal;
+}
+
+void FileBuffer::initializeWordCount(File file)
+{
+    // initialize word count total -T. 
+    wordCountFile = getWordCountFile(file);
+    wordCountBuffer = getWordCountBuffer();
+    wordCountTotal = wordCountFile + wordCountBuffer;
+    app_log("Initialize word count: File %d WordsInBuffer %d\n",wordCountFile, wordCountBuffer);
+}
 
 void FileBuffer::addChar(char c)
 {
@@ -229,7 +317,8 @@ void FileBuffer::addChar(char c)
         //
         buffer[cursorPos++] = c;
         buffer[++bufferSize] = '\0';
-
+        // Changed - T.
+        updateWordCountTotal();
         debug_log("FileBuffer::addChar::cursorPos %d %c\n", cursorPos, c);
     }
 }
@@ -247,12 +336,16 @@ void FileBuffer::removeLastChar()
         // Decrease buffer size and cursor position
         --bufferSize;
         --cursorPos;
+        // Changed - T.
+        updateWordCountTotal();
 
         //
         debug_log("FileBuffer::removeLastChar %d\n", cursorPos);
 
         // Null terminate the buffer
         buffer[bufferSize] = '\0';
+        // Changed - T.
+        updateWordCountTotal();
     }
 }
 
@@ -271,6 +364,8 @@ void FileBuffer::removeCharAtCursor()
 
         // Null terminate the buffer
         buffer[bufferSize] = '\0';
+        // Changed - T.
+        updateWordCountTotal();
     }
 }
 
@@ -305,6 +400,8 @@ void FileBuffer::removeLastWord()
     }
 
     cursorPos = bufferSize;
+    // Changed - T.
+    updateWordCountTotal();
 
     //
     debug_log("FileBuffer::removeLastWord %d\n", cursorPos);
