@@ -282,10 +282,20 @@ int FileBuffer::getWordCountFile(File currentFile)
     } else {
       inWord = false;
     }
-  
-  }
-  
-    app_log("Words in file:  %d \n",wordCount);
+   
+   }
+// Handle the border case where the word in the
+// file continues on to the buffer.
+  if (fileSize > (BUFFER_SIZE/2))
+   {
+    currentFile.seek(readLimit);
+    char firstCharInBuffer = currentFile.read();
+    if (inWord && isAlphaNumeric(firstCharInBuffer))
+     wordCount--;
+   }
+  //reset file postion pointer
+  currentFile.seek(0);
+  app_log("Words in file:  %d \n",wordCount);
   return wordCount;
 
 }
