@@ -131,7 +131,6 @@ void display_EPD_keyboard(char key)
     }
     else if (screen == MENUSCREEN)
     {
-        app_log("Going to MENU SCREEN: %d\n", screen);
         Menu_keyboard(key);
     }
     else if (screen == ERRORSCREEN)
