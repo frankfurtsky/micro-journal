@@ -39,9 +39,15 @@ void WP_setup()
 
     // editor instantiate
     Editor &editor = Editor::getInstance();
+    
+    // start position has to be reset
+    // before switching files through menu
+
+    startLine = -1;
+    
     editor.screenBuffer.rows = rows;
     editor.screenBuffer.cols = cols;
-
+   
     // display init
     GFXfont *font = display_EPD_font();
     display_initialize(MARGIN_X, MARGIN_Y, 60, 20);
@@ -93,17 +99,12 @@ void WP_render()
     //
     WP_check_saved();
     WP_check_sleep();
-
-    
-
-   
-   
    
      // Bottom Status
     WP_render_status();
+    
      // BLINK CURSOR
     WP_render_cursor();
-    
     // RENDER TEXT
     WP_render_text();
     cleared = false;
@@ -187,7 +188,7 @@ void WP_render_text()
     int cursorLine = Editor::getInstance().fileBuffer.cursorLine;
     int cursorLinePos = Editor::getInstance().fileBuffer.cursorLinePos;
     int bufferSize = Editor::getInstance().fileBuffer.getBufferSize();
-
+   
     //
     int totalLine = Editor::getInstance().screenBuffer.total_line;
     int rows = Editor::getInstance().screenBuffer.rows;
@@ -205,6 +206,7 @@ void WP_render_text()
     // when reaching the end of the screen reset the startLine
     if (cursorLine - startLine > rows)
     {
+        
         // clear background
         //epd_poweron();
         //epd_clear_quick(epd_full_screen(), 4, 50);
@@ -216,7 +218,7 @@ void WP_render_text()
                 
 
             epd_poweron();
-            epd_clear_quick(area, 8, 50);
+            epd_clear_quick(area, 4, 50);
             epd_poweroff_all();
 
         
@@ -266,7 +268,7 @@ void WP_render_text()
                 
 
         epd_poweron();
-        epd_clear_quick(area, 8, 50);
+        epd_clear_quick(area, 4, 50);
         epd_poweroff_all();
 
         cleared = true;  
@@ -424,7 +426,7 @@ void WP_render_text()
                 
 
             epd_poweron();
-            epd_clear_quick(area, 8, 50);
+            epd_clear_quick(area, 4, 50);
             epd_poweroff_all();
 
             editing = false;
@@ -583,7 +585,7 @@ void WP_check_sleep()
 // display save status
 // FILE INDEX | BYTES | SAVED | LAYOUT
 // 160 | 200 ---- 200 | 100
-#define STATUS_REFRESH 400
+#define STATUS_REFRESH 300
 void WP_render_status()
 {
     // Changed - T.
