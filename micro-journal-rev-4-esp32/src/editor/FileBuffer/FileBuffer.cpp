@@ -118,7 +118,7 @@ void FileBuffer::load(String fileName)
 
     // reset the buffer
     reset();
-
+    buffer[bufferSize] = '\0';
     // Read file content into text buffer
     bufferSize = 0;
     while (file.available())
@@ -127,7 +127,7 @@ void FileBuffer::load(String fileName)
         buffer[bufferSize++] = c;
     }
     cursorPos = bufferSize;
-    buffer[bufferSize] = '\0';
+    
     
     initializeWordCount(file);   
     file.close();
@@ -213,8 +213,7 @@ void FileBuffer::reset()
 {
     //
     memset(buffer, '\0', sizeof(buffer));
-
-    //
+     
     bufferSize = 0;
 }
 
@@ -346,9 +345,6 @@ void FileBuffer::removeLastChar()
         // Decrease buffer size and cursor position
         --bufferSize;
         --cursorPos;
-        // Changed - T.
-        updateWordCountTotal();
-
         //
         debug_log("FileBuffer::removeLastChar %d\n", cursorPos);
 
