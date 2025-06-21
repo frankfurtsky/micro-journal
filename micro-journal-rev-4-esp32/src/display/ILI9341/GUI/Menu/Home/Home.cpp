@@ -177,9 +177,8 @@ void Home_keyboard(char key)
         config_save();
 
         // load editor
-        Editor::getInstance().loadFile(format("/%d.txt", file_index));
+       // Editor::getInstance().loadFile(format("/%d.txt", file_index));
 
-        //
         // go back to the word processor
         app["screen"] = WORDPROCESSOR;
     }
