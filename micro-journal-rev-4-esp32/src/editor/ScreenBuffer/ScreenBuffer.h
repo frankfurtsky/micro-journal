@@ -20,9 +20,25 @@ public:
 
     bool clear_later = false;
     unsigned int clear_last = 0;
-
-    //
-    void Update(FileBuffer &fileBuffer);
+    // store the size of the line above and below current cursor line
+    int sizeNextLine = -1; 
+    int sizePreviousLine  = -1;
+    // if the adjacent to the current curson line changed in size 
+    bool sizeNextLineChanged = false;
+    bool sizePreviousLineChange = false;
+    // Update the buffer
+    // Parameters: ileBuffer &fileBuffer and bool edit 
+    // edit is true if the Update is called after an edit operation
+    // eidt is false for cursor moments
+    void Update(FileBuffer &fileBuffer, bool edit);
+    // Maintains info regarding lines above and below current curror line
+    // Checks if an edit operation in current line has 
+    // changed the lines above or below it (due to wrapping)
+    // Parameters: FileBuffer &fileBuffer, bool edit
+    // edit is true if the Update is called after an edit operation
+    // eidt is false for cursor moments
+    void UpdateLineInfo (FileBuffer &fileBuffer, bool edit);
+  
 };
 
 #endif

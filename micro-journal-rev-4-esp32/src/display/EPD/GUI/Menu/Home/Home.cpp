@@ -150,11 +150,11 @@ void Home_keyboard(char key)
         app["config"]["file_index"] = file_index;
         config_save();
 
-        // Thia function gets called by WP_
+        // Thia function gets called by WP_Setup
         // load editor
         // Editor::getInstance().loadFile(format("/%d.txt", file_index));
 
-        //
+        
         // go back to the word processor
         app["screen"] = WORDPROCESSOR;
     }

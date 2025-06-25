@@ -47,6 +47,8 @@ public:
     size_t wordCountBuffer;
     // holds the word count of the file data that is not in the current buffer - T.
     size_t wordCountTotal;
+    //
+    
     int cursorPos;
     int cursorLine;
     int cursorLinePos;
@@ -63,15 +65,16 @@ public:
     int getWordCountBuffer();
     // calculate word count of the file (excluding the buffer) - T.
     int getWordCountFile(File currentFile);
-    
     // update total word count - T.
     int updateWordCountTotal();
-    // Count words  when the file is loaded - T.
+    // count words  when the file is loaded - T.
     void initializeWordCount(File currentFile);
+
     void addChar(char c);
     void removeLastChar();
     void removeCharAtCursor();
     void removeLastWord();
+    
 
     //
     bool available();

@@ -64,8 +64,10 @@ void Editor::loadFile(String fileName)
     // Step 2. Initialize the FileBuffer
     fileBuffer.load(fileName);
 
-    // Update the Screen Buffer
-    screenBuffer.Update(fileBuffer);
+    // File just loaded 
+    // so update the screen buffer - T.
+
+    screenBuffer.Update(fileBuffer, false);
 
     // unlock
     locked = false;
@@ -176,6 +178,9 @@ void Editor::keyboard(char key)
             fileBuffer.removeLastChar();
             // set saved flag to false
             this->saved = false;
+            // The file has been edited,
+            // so update the screen buffer - .T
+            screenBuffer.Update(fileBuffer, true);
         }
         // buffer emptied
         else
@@ -389,6 +394,9 @@ void Editor::keyboard(char key)
             //
             fileBuffer.cursorPos = newCursorPos;
         }
+        // Cursor moved,
+        // update the screen buffer -T.
+        screenBuffer.Update(fileBuffer, false);
     }
 
     //////////////////////////
@@ -412,11 +420,14 @@ void Editor::keyboard(char key)
         fileBuffer.addChar(key);
         // set saved flag to false
         this->saved = false;
-    }
-     // update the word counter - changed by T.
+        
+
+     // update the word counter -  T.
     
     fileBuffer.updateWordCountTotal();
     
-    // update the screen buffer
-    screenBuffer.Update(fileBuffer);
+    // The file has been edited so
+    // update the screen buffer - T.
+    screenBuffer.Update(fileBuffer, true);
+    }
 }

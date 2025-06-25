@@ -3,7 +3,7 @@
 #include "display/display.h"
 
 //
-void ScreenBuffer::Update(FileBuffer &fileBuffer)
+void ScreenBuffer::Update(FileBuffer &fileBuffer, bool edit)
 {
     // Loop through the text buffer
     // and product the data structure that is splitted in each line
@@ -55,8 +55,8 @@ void ScreenBuffer::Update(FileBuffer &fileBuffer)
         {
             last_space_index = i;
             last_space_position = line_count;
-        } 
-        
+        }
+
         // Handle words longer than `cols`
         if (line_count == cols && last_space_index == -1)
         {
@@ -142,11 +142,76 @@ void ScreenBuffer::Update(FileBuffer &fileBuffer)
         //
         if (pCursorPos >= line_position[i])
         {
+
             // found the line index
             fileBuffer.cursorLine = i;
+
             // calculate the cursor position within the line
             fileBuffer.cursorLinePos = pCursorPos - line_position[i];
             break;
         }
+    }
+
+    UpdateLineInfo(fileBuffer, edit);
+}
+
+/**
+ * @brief   Update info about lines above and below the current cursor.
+ * Author: T. 
+ * This fuction maintains info about the lines above and below the
+ * current cursor. In case, while editing, the lines above or
+ * below have been changed (due to word wraping) the flags
+ * sizeNextLineChanged & sizePreviousLineChange are set to true.
+ * On cursor moment, these flags are reset.
+ *
+ * @param[in]  fileBuffer  Current file bufffer.
+ * @param[in]  edit        should be True if called during edit operation; false otherwise
+ * @param[out] sizeNextLineChanged
+ * @param[out] sizePreviousLineChange
+ * @return     None.
+ */
+void ScreenBuffer::UpdateLineInfo(FileBuffer &fileBuffer, bool edit)
+{
+    if (total_line >= 1)
+    {
+
+        // Called not during edit? Reset to
+        // just update information
+        if (!edit)
+        {
+
+            sizeNextLine = -1;
+            sizePreviousLine != -1;
+        }
+
+        // Last line?
+        if (fileBuffer.cursorLine <= total_line - 1)
+        {
+            // The text is being edited...check for changes in the line below the current cursor
+            if (sizeNextLine != -1 && line_length[fileBuffer.cursorLine + 1] != sizeNextLine)
+                sizeNextLineChanged = true;
+            else
+                sizeNextLineChanged = false;
+            // Update
+            sizeNextLine = line_length[fileBuffer.cursorLine + 1];
+        }
+
+        // Minimum two lines...
+        if (total_line > 1)
+            if (fileBuffer.cursorLine >= 1)
+            {
+                // The text is being edited...check for changes in the line above the current cursor
+                if (sizePreviousLine != -1 && line_length[fileBuffer.cursorLine - 1] != sizePreviousLine)
+                    sizePreviousLineChange = true;
+                else
+                    sizePreviousLineChange = false;
+                // Update
+                sizePreviousLine = line_length[fileBuffer.cursorLine - 1];
+            }
+            else
+            {
+                sizePreviousLine != -1;
+                sizePreviousLineChange = false;
+            }
     }
 }
