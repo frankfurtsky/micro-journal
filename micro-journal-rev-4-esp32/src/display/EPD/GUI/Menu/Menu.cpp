@@ -27,7 +27,7 @@ void Menu_setup()
 {
     // clear screen
     menu_clear = true;
-
+    menu_state_prev = -1;
     app_log("Entering Menu Setup\n");
 }
 
@@ -36,18 +36,99 @@ void Menu_render()
     //
     JsonDocument &app = app_status();
 
-    // check if app clear is set as well
-    if (app["clear"].as<bool>() == true)
-    {
-        menu_clear = true;
-    }
+
 
     // if menu clear is not set the no need to refresh menu
-    if (!menu_clear)
+    if (menu_clear)
     {
-        return;
+        Menu_renderHeading();
+        menu_clear = false;
+        
     }
 
+  
+    ///////////////////////////
+    // draw sub module of menu
+    int menu_state = app["menu"]["state"].as<int>();
+
+    if (menu_state == MENU_HOME)
+    {
+        if (menu_state_prev != menu_state)
+        {
+            Home_setup();
+            Home_render(false);
+        }
+
+        else
+            Home_render(true);
+    }
+
+    // Delete File Confirmation Screen
+    else if (menu_state == MENU_CLEAR)
+    {
+        if (menu_state_prev != menu_state)
+            Clear_setup();
+        else
+        Clear_render();
+    }
+
+    // Wifi Setup
+    else if (menu_state == MENU_WIFI)
+    {
+        if (menu_state_prev != menu_state)
+            Wifi_setup();
+else
+        Wifi_render();
+    }
+
+    // Keyboard Layout
+    else if (menu_state == MENU_LAYOUT)
+    {
+        if (menu_state_prev != menu_state)
+            Layout_setup();
+else
+        Layout_render();
+    }
+
+    // Sync
+    else if (menu_state == MENU_SYNC)
+    {
+        if (menu_state_prev != menu_state)
+            Sync_setup();
+        else
+            Sync_render();
+    }
+
+    // Firmware Update
+    else if (menu_state == MENU_FIRMWARE)
+    {
+        if (menu_state_prev != menu_state)
+            Firmware_setup();
+else
+        Firmware_render();
+    }
+
+    // Reset
+    else if (menu_state == MENU_RESET)
+    {
+        if (menu_state_prev != menu_state)
+            Reset_setup();
+else
+        Reset_render();
+    }
+
+    // render frambuffer
+   display_draw_buffer();
+
+    ///////////////////////////
+    // save prev state
+    menu_state_prev = menu_state;
+}
+
+void Menu_renderHeading()
+{
+
+    
     // Clear Screen
     epd_poweron();
     epd_clear_quick(epd_full_screen(), 4, 50);
@@ -55,7 +136,7 @@ void Menu_render()
 
     // deflag so that it doesn't repeatedely called
     menu_clear = false;
-    app["clear"] = false;
+
 
     ///////////////////////////
     // Render Toolbar
@@ -72,91 +153,24 @@ void Menu_render()
     writeln((GFXfont *)&systemFont, toolbar.c_str(), &cursorX, &cursorY, display_EPD_framebuffer());
     epd_draw_hline(0, 58, EPD_WIDTH, 0, display_EPD_framebuffer());
 
-    ///////////////////////////
-    // draw sub module of menu
-    int menu_state = app["menu"]["state"].as<int>();
 
-    if (menu_state == MENU_HOME)
-    {
-        if (menu_state_prev != menu_state)
-            Home_setup();
-
-        Home_render();
-    }
-
-    // Delete File Confirmation Screen
-    else if (menu_state == MENU_CLEAR)
-    {
-        if (menu_state_prev != menu_state)
-            Clear_setup();
-
-        Clear_render();
-    }
-
-    // Wifi Setup
-    else if (menu_state == MENU_WIFI)
-    {
-        if (menu_state_prev != menu_state)
-            Wifi_setup();
-
-        Wifi_render();
-    }
-
-    // Keyboard Layout
-    else if (menu_state == MENU_LAYOUT)
-    {
-        if (menu_state_prev != menu_state)
-            Layout_setup();
-
-        Layout_render();
-    }
-
-    // Sync
-    else if (menu_state == MENU_SYNC)
-    {
-        if (menu_state_prev != menu_state)
-            Sync_setup();
-
-        Sync_render();
-    }
-
-    // Firmware Update
-    else if (menu_state == MENU_FIRMWARE)
-    {
-        if (menu_state_prev != menu_state)
-            Firmware_setup();
-
-        Firmware_render();
-    }
-
-    // Reset
-    else if (menu_state == MENU_RESET)
-    {
-        if (menu_state_prev != menu_state)
-            Reset_setup();
-
-        Reset_render();
-    }
-
-    // render frambuffer
-    display_draw_buffer();
-
-    ///////////////////////////
-    // save prev state
-    menu_state_prev = menu_state;
 }
 
 //
 void Menu_keyboard(char key)
 {
-    // every key stroke re-process the menu
-    Menu_clear();
+    
 
     //
     JsonDocument &app = app_status();
 
     // clear background for every key stroke
     int menu_state = app["menu"]["state"].as<int>();
+
+    // every key stroke re-process the menu
+    // HOME
+    if (menu_state != MENU_HOME)
+     Menu_clear();
 
     // HOME
     if (menu_state == MENU_HOME)

@@ -13,11 +13,14 @@
 //
 void Sync_setup()
 {
+
+    Menu_clear();
     // load wifi
     wifi_config_load();
 
     // init sync
     wifi_sync_init();
+   
 }
 
 //
@@ -101,7 +104,7 @@ void Sync_render()
 
     // BACK
     cursorX = 20;
-    cursorY += 50;
+    cursorY = 250;
     writeln(
         (GFXfont *)&systemFont,
         "[B] Back",

@@ -26,6 +26,7 @@ void Wifi_setup()
 
     // set the screen to show the wifi configuration list
     wifi_config_status = WIFI_CONFIG_LIST;
+    Menu_clear();
 }
 
 //

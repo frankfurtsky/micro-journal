@@ -11,6 +11,12 @@
 //
 #include <SD.h>
 #include <SPIFFS.h>
+#define GxEPD_WHITE 0xFF  // white pixel
+#define GxEPD_BLACK 0x00  // black pixel
+
+// Stores the previously loaded file index 
+static int prevFileIndex = -1;
+static bool renderFileSelection = false;
 
 // Conviences function to get File Size with just an index
 size_t FileIndexSize(int index)
@@ -24,72 +30,139 @@ size_t FileIndexSize(int index)
 //
 void Home_setup()
 {
+ 
 }
 
 //
-void Home_render()
+void Home_render(bool onlyRefresh)
 {
+
     JsonDocument &app = app_status();
 
-    // WIFI
-    int cursorX = 10;
-    int cursorY = 100;
-    writeln((GFXfont *)&systemFont, " [W] WIFI", &cursorX, &cursorY, display_EPD_framebuffer());
+    int file_index = app["config"]["file_index"].as<int>();
+    // Current Keyboard layout.
+    String currentKeyboardLayout = app["config"]["keyboard_layout"].as<String>();
 
-    // SYNC
-    if (app["config"]["sync"]["url"].as<String>().isEmpty() == false)
+    if (!onlyRefresh)
     {
+
+        // Save the current file index - T.
+         prevFileIndex = file_index;
+        // WIFI
+        int cursorX = 10;
+        int cursorY = 100;
+        writeln((GFXfont *)&systemFont, " [W] WIFI", &cursorX, &cursorY, display_EPD_framebuffer());
+
+        // SYNC
+        if (app["config"]["sync"]["url"].as<String>().isEmpty() == false)
+        {
+            cursorX = 10;
+            cursorY += 35;
+            writeln((GFXfont *)&systemFont, " [S] SYNC", &cursorX, &cursorY, display_EPD_framebuffer());
+        }
+
         cursorX = 10;
         cursorY += 35;
-        writeln((GFXfont *)&systemFont, " [S] SYNC", &cursorX, &cursorY, display_EPD_framebuffer());
-    }
+        // Show the current keyboard layout. - T.
+        String keyboardLayout = " [K] Keyboard Layout ["+currentKeyboardLayout+"]";
+        writeln((GFXfont *)&systemFont, keyboardLayout.c_str(), &cursorX, &cursorY, display_EPD_framebuffer());
 
-    cursorX = 10;
-    cursorY += 35;
-    writeln((GFXfont *)&systemFont, " [K] Keyboard Layout", &cursorX, &cursorY, display_EPD_framebuffer());
+        // Reset
+        cursorX = 10;
+        cursorY += 35;
+        writeln((GFXfont *)&systemFont, " [R] Reset", &cursorX, &cursorY, display_EPD_framebuffer());
 
-    // Reset
-    cursorX = 10;
-    cursorY += 35;
-    writeln((GFXfont *)&systemFont, " [R] Reset", &cursorX, &cursorY, display_EPD_framebuffer());
+        // BACK
+        cursorX = 10;
+        cursorY += 50;
+        writeln((GFXfont *)&systemFont, " [B] BACK", &cursorX, &cursorY, display_EPD_framebuffer());
 
-    // BACK
-    cursorX = 10;
-    cursorY += 50;
-    writeln((GFXfont *)&systemFont, " [B] BACK", &cursorX, &cursorY, display_EPD_framebuffer());
-
-    // File Selection
-    cursorX = 600;
-    cursorY = 50;
-    writeln((GFXfont *)&systemFont, "CHOOSE A FILE", &cursorX, &cursorY, display_EPD_framebuffer());
-    cursorY += 30;
-
-    //
-    int file_index = app["config"]["file_index"].as<int>();
-    for (int i = 0; i < 10; i++)
-    {
+        // File Selection
         cursorX = 600;
+        cursorY = 50;
+        writeln((GFXfont *)&systemFont, "CHOOSE A FILE", &cursorX, &cursorY, display_EPD_framebuffer());
         cursorY += 30;
+
+        for (int i = 0; i < 10; i++)
+        {
+            cursorX = 600;
+            cursorY += 30;
+            writeln(
+                (GFXfont *)&systemFont,
+                format(" [%d]: %zu", i, FileIndexSize(i)).c_str(),
+                &cursorX, &cursorY,
+                display_EPD_framebuffer());
+
+            // draw a circle next to the selected file
+            if (file_index == i)
+            {
+                epd_fill_circle(590, cursorY - 8, 8, 0, display_EPD_framebuffer());
+            }
+            /* else
+                epd_draw_circle(590, cursorY - 8, 8, 0, display_EPD_framebuffer()); */
+        }
+        //
+        cursorX = 500;
+        cursorY = cursorY + 60;
         writeln(
             (GFXfont *)&systemFont,
-            format(" [%d]: %zu", i, FileIndexSize(i)).c_str(),
+            format("[D] Clear File %d ", file_index).c_str(),
             &cursorX, &cursorY,
             display_EPD_framebuffer());
+    }
+    else
+    {
 
-        // draw a circle next to the selected file
-        if (file_index == i)
+        // WIFI
+        int cursorX = 10;
+        int cursorY = 100;
+       
+        if (prevFileIndex != file_index)
         {
-            epd_fill_circle(590, cursorY - 8, 8, 0, display_EPD_framebuffer());
+            cursorY = 80;
+            // Delete the previous selection dot -T.
+            cursorX = 600;
+            cursorY = cursorY + 30 * (prevFileIndex + 1);
+
+            Rect_t area =
+                display_rect(
+                    575,
+                    cursorY - 20,
+                    32,
+                    30);
+            epd_poweron();
+            epd_clear_quick(area,8,50);
+            epd_poweroff_all();
+
+            // epd_draw_circle(590, cursorY - 8, 8, GxEPD_BLACK, display_EPD_framebuffer());
+
+            cursorX = 600;
+            cursorY = 80;
+            // Render the new dot - T.
+            cursorY = cursorY + 30 * (file_index + 1);
+            epd_fill_circle(590, cursorY - 8, 8, GxEPD_BLACK, display_EPD_framebuffer());
+
+            cursorX = 730;
+            cursorY = 440;
+
+            // delete a line and redraw the line
+            area =
+                display_rect(
+                    cursorX - 10,
+                    cursorY - 20,
+                    40,
+                    display_lineheight());
+            epd_poweron();
+            epd_clear_quick(area, 4, 50);
+            epd_poweroff_all();
+            writeln(
+                (GFXfont *)&systemFont,
+                format("%d", file_index).c_str(),
+                &cursorX, &cursorY,
+                display_EPD_framebuffer());
+            prevFileIndex = file_index;
         }
     }
-    //
-    cursorX = 500;
-    cursorY += 60;
-    writeln(
-        (GFXfont *)&systemFont,
-        format(" [D] Clear File %d ", file_index).c_str(),
-        &cursorX, &cursorY,
-        display_EPD_framebuffer());
 }
 
 //
@@ -141,20 +214,40 @@ void Home_keyboard(char key)
     {
         app["menu"]["state"] = MENU_RESET;
     }
+    // UP arrow pressed
+    else if (key == 20)
+    {
+      int file_index = app["config"]["file_index"];
+      if (file_index > 0 )
+       file_index--;
+      app["config"]["file_index"] = file_index;
+     config_save();
+     // load editor
+     Editor::getInstance().loadFile(format("/%d.txt", file_index));
+     
+    }
+    // DOWN arrow pressed
+    else if (key == 21)
+    {
+      int file_index = app["config"]["file_index"];
+      if (file_index < 9 )
+       file_index++;
+      app["config"]["file_index"] = file_index;
+     config_save();
+     // load editor
+     Editor::getInstance().loadFile(format("/%d.txt", file_index));
+   
+    }
+    else if (key == '\n')
+          app["screen"] = WORDPROCESSOR;
 
-    // chose file
-    if (key > 47 && key < 58)
+ 
+    else if (key > 47 && key < 58 )
     {
         // save config
         int file_index = key - 48;
         app["config"]["file_index"] = file_index;
         config_save();
-
-        // Thia function gets called by WP_Setup
-        // load editor
-        // Editor::getInstance().loadFile(format("/%d.txt", file_index));
-
-        
         // go back to the word processor
         app["screen"] = WORDPROCESSOR;
     }
