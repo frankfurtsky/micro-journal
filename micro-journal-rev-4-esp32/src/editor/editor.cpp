@@ -1,10 +1,10 @@
 #include "editor.h"
 #include "app/app.h"
 #include "display/display.h"
-
 //
 #include <FS.h>
 #include <SD.h>
+#define DEL 0x4C
 
 // Given the fileName, go through the loading process
 // initialize FileBuffer and ScreenBuffer
@@ -197,22 +197,14 @@ void Editor::keyboard(char key)
     }
 
     // DEL key deletes the word
-    else if (key == 127)
+    else if (key == DEL)
     {
         if (fileBuffer.getBufferSize() > 0)
         {
-            // if editing at the end of the line then remove word
-            if (fileBuffer.cursorPos == fileBuffer.bufferSize)
-            {
-                fileBuffer.removeLastWord();
-            }
-
-            else
-            {
-                // remove word in front
-                fileBuffer.removeCharAtCursor();
-            }
-
+           fileBuffer.removeLastWord();
+           // The file has been edited,
+            // so update the screen buffer - .T
+            screenBuffer.Update(fileBuffer, true);
             // set saved flag to false
             this->saved = false;
         }

@@ -10,6 +10,8 @@
 // special key
 #define EMPTY 0x0
 #define MENU 0x6
+#define CTL 0x01 || 0x10
+#define DEL 0x4C
 
 void keyboard_setup();
 void keyboard_loop();

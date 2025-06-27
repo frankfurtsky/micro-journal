@@ -120,6 +120,13 @@ void keyboard_hid_pressed(uint8_t keycode, uint8_t modifier)
     // Check ALT key pressed
     bool alt = (modifier & KEYBOARD_MODIFIER_LEFTALT) || (modifier & KEYBOARD_MODIFIER_RIGHTALT);
 
+    bool ctl = (modifier & KEYBOARD_MODIFIER_LEFTCTRL) || (modifier & KEYBOARD_MODIFIER_RIGHTCTRL);
+
+    if (ctl && keycode ==0x2a){
+      display_keyboard(DEL);
+        return;
+    }
+
     // Translate the Keycode to ASCII
     JsonDocument &app = app_status();
     String locale = app["config"]["keyboard_layout"].as<String>();

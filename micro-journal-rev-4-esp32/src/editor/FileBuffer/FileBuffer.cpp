@@ -378,34 +378,31 @@ void FileBuffer::removeCharAtCursor()
 void FileBuffer::removeLastWord()
 {
     int length = bufferSize;
-    if (length == 0)
-        return;
 
-    int end = length - 1;
-    while (end >= 0 && buffer[end] == ' ')
-        end--;
+     if (cursorPos == 0) return;  // nothing to remove if cursor at start
 
-    if (end < 0)
-        return;
+    int i = cursorPos - 1;
 
-    int start = end;
-    while (start >= 0 && buffer[start] != ' ' && buffer[start] != '\n')
-        start--;
-
-    if (start <= 0)
-    {
-        start = 0;
-        buffer[0] = '\0';
-        bufferSize = 0;
-    }
-    else
-    {
-        buffer[start] = ' ';
-        buffer[start + 1] = '\0';
-        bufferSize = start + 1;
+    // Skip trailing spaces (if cursor is after a space)
+    while (i >= 0 && isspace((unsigned char)buffer[i])) {
+        i--;
     }
 
-    cursorPos = bufferSize;
+    // Move backwards to find start of word
+    while (i >= 0 && !isspace((unsigned char)buffer[i])) {
+        i--;
+    }
+
+    int wordStart = i + 1;
+    int wordLength = cursorPos - wordStart;
+
+    // Shift remaining buffer left
+    memmove(&buffer[wordStart], &buffer[cursorPos], strlen(&buffer[cursorPos]) + 1); // +1 for null terminator
+
+    // Update cursor position
+    cursorPos = wordStart;
+    bufferSize -= wordLength;
+
     // Changed - T.
     updateWordCountTotal();
 

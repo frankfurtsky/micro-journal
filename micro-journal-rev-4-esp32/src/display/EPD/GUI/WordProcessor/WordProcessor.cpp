@@ -33,6 +33,7 @@ bool clear_full = false;
 // bool clear_request = true;
 bool cleared = true;
 bool backspaced = false;
+bool cmddelete = false;
 
 // flag: refresh word count only when it has chaged. -T.
 int lastWordCount = -1; 
@@ -353,12 +354,16 @@ void WP_render_text()
         // render frame to the display
         display_draw_buffer();
     }
+    
 
     // handle backspace
-    else if (backspaced)
+    else if (backspaced || cmddelete)
     {
-        //
-        backspaced = false;
+        if (backspaced)
+            backspaced = false;
+        else if (cmddelete)
+            cmddelete = false;
+            
         int currentLine = max(0, cursorLine - startLine);
 
         // clear the currentLine and the previousLine
@@ -878,6 +883,8 @@ void WP_keyboard(char key)
         // go to sleep mode
         app["screen"] = SLEEPSCREEN;
     }
+   
+     
 
     else
     {
@@ -889,9 +896,11 @@ void WP_keyboard(char key)
         Editor::getInstance().keyboard(key);
 
         if (key == '\b')
-        {
+
             backspaced = true;
-        }
+
+        if (key == DEL)
+            cmddelete = true;
     }
 }
 
