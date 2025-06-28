@@ -377,31 +377,54 @@ void FileBuffer::removeCharAtCursor()
 
 void FileBuffer::removeLastWord()
 {
-    int length = bufferSize;
 
      if (cursorPos == 0) return;  // nothing to remove if cursor at start
 
-    int i = cursorPos - 1;
 
-    // Skip trailing spaces (if cursor is after a space)
-    while (i >= 0 && isspace((unsigned char)buffer[i])) {
-        i--;
+
+    int wordStart, wordEnd;
+
+    
+    // If cursor is in trailing spaces at end of text, move left past spaces
+    while (cursorPos > 0 && isspace((unsigned char)buffer[cursorPos - 1])) {
+        (cursorPos)--;
     }
 
-    // Move backwards to find start of word
-    while (i >= 0 && !isspace((unsigned char)buffer[i])) {
-        i--;
+    // If cursor is still at position 0, nothing to delete
+    if (cursorPos == 0 && isspace((unsigned char)buffer[0])) return;
+
+    // Find start of word: move left while not space and not start of buffer
+    wordStart = cursorPos;
+    while (wordStart > 0 && !isspace((unsigned char)buffer[wordStart - 1])) {
+        wordStart--;
     }
 
-    int wordStart = i + 1;
-    int wordLength = cursorPos - wordStart;
+    // Find end of word: move right while not space and not null terminator
+    wordEnd = cursorPos;
+    while (wordEnd < bufferSize && !isspace((unsigned char)buffer[wordEnd])) {
+        wordEnd++;
+    }
 
-    // Shift remaining buffer left
-    memmove(&buffer[wordStart], &buffer[cursorPos], strlen(&buffer[cursorPos]) + 1); // +1 for null terminator
+    // Additionally skip trailing spaces after the word
+    while (wordEnd < bufferSize && isspace((unsigned char)buffer[wordEnd])) {
+        wordEnd++;
+    }
+
+
+    int removedLength = wordEnd - wordStart;
+    if (removedLength == 0) return;  // no word to delete
+
+    // Shift remaining buffer left to delete word and trailing spaces
+    memmove(&buffer[wordStart], &buffer[wordEnd], bufferSize - wordEnd + 1); // +1 for null terminator
+
+    // Update buffer size
+    bufferSize -= removedLength;
+
+    // Ensure null terminator is at the right place
+    buffer[bufferSize] = '\0';
 
     // Update cursor position
     cursorPos = wordStart;
-    bufferSize -= wordLength;
 
     // Changed - T.
     updateWordCountTotal();

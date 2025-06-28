@@ -20,7 +20,7 @@ const int cols = 47;
 const int rows = 7;
 
 // status bar
-const int status_height = 30;
+const int status_height = 40;
 const int statusY = EPD_HEIGHT - status_height - 5;
 
 // font charecteristics - T.
@@ -225,7 +225,7 @@ void WP_render_fileSavedStatus(String fileStatus)
     int cursorY = statusY + status_height - 8;
     // clear the status area
     Rect_t area = display_rect(
-        cursorX,
+        cursorX-fontWidth,
         statusY,
         170,
         status_height);
@@ -363,7 +363,7 @@ void WP_render_text()
             backspaced = false;
         else if (cmddelete)
             cmddelete = false;
-            
+
         int currentLine = max(0, cursorLine - startLine);
 
         // clear the currentLine and the previousLine
@@ -373,7 +373,7 @@ void WP_render_text()
 
         if (Editor::getInstance().screenBuffer.sizePreviousLineChange)
         {
-            // Draw from the currentLine
+            // Clear  the previous line
             display_setline(currentLine - 1);
             WP_clear_row(currentLine - 1);
 
@@ -385,6 +385,7 @@ void WP_render_text()
 
         // and redraw the lines after the current line
         WP_render_text_line(cursorLine, display_y(), NULL);
+
         // If it was not the last char that was deleted
         if (cursorLinePos != bufferSize)
         {
@@ -410,6 +411,13 @@ void WP_render_text()
             // render frame to the display
             display_draw_buffer();
         }
+        // Handle case:
+        // When there were just two lines and the last line 
+        // was erased and the cursor moved to the previous line
+        if (cursorLine == totalLine == 0 && cursorLine_prev == 1 ){
+           WP_clear_row(cursorLine_prev);
+        }
+        
     }
 
     // Partial Refresh Logic
@@ -810,13 +818,13 @@ void WP_render_dynamic_status(bool firstRender)
 
     // remove previous text
     Rect_t area = display_rect(
-        cursorX,
+        cursorX-fontWidth,
         statusY,
         eraseWidth,
         status_height);
 
     epd_poweron();
-    epd_clear_quick(area, 4, 50);
+    epd_clear_quick(area, 4, 45);
 
     writeln((GFXfont *)&systemFont, info.c_str(), &cursorX, &cursorY, NULL);
 
@@ -834,7 +842,7 @@ void WP_render_dynamic_status(bool firstRender)
 
         // remove previous text
         area = display_rect(
-            cursorX,
+            cursorX-fontWidth,
             statusY,
             eraseWidth,
             status_height);

@@ -179,7 +179,6 @@ void ScreenBuffer::UpdateLineInfo(FileBuffer &fileBuffer, bool edit)
         // just update information
         if (!edit)
         {
-
             sizeNextLine = -1;
             sizePreviousLine != -1;
         }
