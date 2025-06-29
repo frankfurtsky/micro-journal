@@ -20,7 +20,7 @@ const int cols = 47;
 const int rows = 7;
 
 // status bar
-const int status_height = 40;
+const int status_height = 35;
 const int statusY = EPD_HEIGHT - status_height - 5;
 
 // font charecteristics - T.
@@ -28,10 +28,10 @@ const int fontNewLineSize = display_EPD_font()->advance_y;
 const int fontWidth = display_EPD_font()->glyph->advance_x;
 
 // clear screen
-bool clear_full = false;
+static bool clear_full = false;
 
 // bool clear_request = true;
-bool cleared = true;
+static bool justCleared = true;
 bool backspaced = false;
 bool cmddelete = false;
 
@@ -39,7 +39,7 @@ bool cmddelete = false;
 int lastWordCount = -1; 
 
 // label -T.
-static String fileStatus = "NOT SAVED";
+static String fileStatus = "";
 // flag: has the file status changed? -T.
 bool fileStatusChanged = false;
 //
@@ -77,6 +77,7 @@ void WP_setup()
 
     // clear background
     clear_full = true;
+    fileStatus = "";
 }
 
 //
@@ -89,13 +90,15 @@ void WP_render()
         epd_poweron();
         epd_clear();
         epd_poweroff_all();
+        // The screen was just cleared completely
+        // Render everything afresh
+        justCleared = true;
         // Render the static and dynamic
         // parts of the status bar
         WP_render_static_status();
-        WP_render_dynamic_status(true);
-
+        WP_render_dynamic_status();
         clear_full = false;
-        cleared = true;
+        
     }
 
     //
@@ -110,7 +113,7 @@ void WP_render()
     // RENDER TEXT
     WP_render_text();
 
-    cleared = false;
+    justCleared = false;
 }
 
 // DRAW LINE OF TEXT
@@ -227,7 +230,7 @@ void WP_render_fileSavedStatus(String fileStatus)
     Rect_t area = display_rect(
         cursorX-fontWidth,
         statusY,
-        170,
+        175,
         status_height);
 
     //
@@ -258,7 +261,7 @@ void WP_render_text()
     //
     int totalLine = Editor::getInstance().screenBuffer.total_line;
     int rows = Editor::getInstance().screenBuffer.rows;
-
+    static bool textCleared = false;
     // when first turned on
     // start editing from last 2nd Line
     if (startLine == -1)
@@ -284,7 +287,7 @@ void WP_render_text()
         epd_poweroff_all();
 
         //
-        cleared = true;
+        textCleared = true;
 
         startLine = max(cursorLine - 1, 0);
         debug_log("WP_render_text::New Page cursorLine %d startLine %d rows %d totalLine %d\n",
@@ -321,14 +324,14 @@ void WP_render_text()
         epd_clear_quick(area, 4, 50);
         epd_poweroff_all();
 
-        cleared = true;
+        textCleared = true;
     }
 
     //
     // Middle part of the text will be rendered
     // Only when refresh background is called
     //
-    if (cleared)
+    if (textCleared||justCleared)
     {
         // Draw from the first line
         display_setline(0);
@@ -353,15 +356,17 @@ void WP_render_text()
         //
         // render frame to the display
         display_draw_buffer();
+        textCleared = false;
     }
     
 
     // handle backspace
     else if (backspaced || cmddelete)
     {
+
         if (backspaced)
             backspaced = false;
-        else if (cmddelete)
+        if (cmddelete)
             cmddelete = false;
 
         int currentLine = max(0, cursorLine - startLine);
@@ -380,11 +385,11 @@ void WP_render_text()
             // and redraw the line
             WP_render_text_line(cursorLine - 1, display_y(), NULL);
         }
-        // delete a line and redraw the line
+        // delete the current line 
         WP_clear_row(currentLine);
 
-        // and redraw the lines after the current line
-        WP_render_text_line(cursorLine, display_y(), NULL);
+        // and redraw the line
+        WP_render_text_line(cursorLine, display_y(),  NULL);
 
         // If it was not the last char that was deleted
         if (cursorLinePos != bufferSize)
@@ -392,7 +397,7 @@ void WP_render_text()
 
             // If it's not the last line, update the rest of the lines
             // of text since there positions may have changed.
-            WP_clear_below_line(cursorLine);
+         WP_clear_below_line(cursorLine);
 
             // Redraw the lines below the current line.
             for (int i = cursorLine + 1; i <= totalLine; i++)
@@ -407,17 +412,19 @@ void WP_render_text()
                 // increase the line
                 display_newline();
             }
-
             // render frame to the display
             display_draw_buffer();
+           
+ 
         }
-        // Handle case:
-        // When there were just two lines and the last line 
-        // was erased and the cursor moved to the previous line
-        if (cursorLine == totalLine == 0 && cursorLine_prev == 1 ){
-           WP_clear_row(cursorLine_prev);
-        }
-        
+         // Handle case:
+         // When there were just two lines and the last line
+         // was erased and the cursor moved to the previous line
+
+            if (cursorLine == 0 && cursorLine_prev == 1)
+
+                WP_clear_row(cursorLine_prev);
+         
     }
 
     // Partial Refresh Logic
@@ -461,7 +468,6 @@ void WP_render_text()
         {
             // mark editing flag
             editing = true;
-
             //
             int currentLine = max(0, cursorLine - startLine);
 
@@ -714,7 +720,7 @@ void WP_render_status()
     // FILE SIZE DRAWS WHEN STOPPED EDITING FOR A WHILE
     static int last = millis();
     static bool debouncing = false;
-    static bool fileSaveStatusChanged = false;
+    bool fileSaveStatusChanged = false;
     // On edit or refresh...
 
     if (filesize != filesize_prev)
@@ -732,7 +738,7 @@ void WP_render_status()
     {
         last = millis();
         debouncing = false;
-        WP_render_dynamic_status(false);
+        WP_render_dynamic_status();
     }
 
     /////////////////////////////////////
@@ -749,13 +755,14 @@ void WP_render_status()
     else 
         savedText = "NOT SAVED"; 
 
-   
-    if (!fileStatus.equals(savedText))
+    // check if the status has changed or 
+    // it was the first load
+    if (!fileStatus.equals(savedText) || fileStatus.isEmpty())
         fileSaveStatusChanged = true;
     else
         fileSaveStatusChanged = false;
    
-    if (fileSaveStatusChanged || clear_full)
+    if (fileSaveStatusChanged || justCleared)
     {
       WP_render_fileSavedStatus(savedText);
       fileStatus = savedText;
@@ -779,12 +786,12 @@ void WP_render_static_status()
 
     // Char count C:
     cursorX = 200;
-    label = "C: ";
+    label = "C:";
     writeln((GFXfont *)&systemFont, label.c_str(), &cursorX, &cursorY, display_EPD_framebuffer());
 
     // Char count W:
     cursorX = 400;
-    label = "W: ";
+    label = "W:";
     writeln((GFXfont *)&systemFont, label.c_str(), &cursorX, &cursorY, display_EPD_framebuffer());
 
     ////////////////////////////////////////
@@ -796,7 +803,7 @@ void WP_render_static_status()
     writeln((GFXfont *)&systemFont, label.c_str(), &cursorX, &cursorY, display_EPD_framebuffer());
 }
 
-void WP_render_dynamic_status(bool firstRender)
+void WP_render_dynamic_status()
 {
     
     size_t filesize = Editor::getInstance().fileBuffer.seekPos + Editor::getInstance().fileBuffer.getBufferSize();
@@ -810,15 +817,16 @@ void WP_render_dynamic_status(bool firstRender)
     // redraw the new number
     // Changed - T.
     String filesizeFormatted = formatNumber(filesize);
-    String label = "C: ";
+    String label = "C:";
     // Adjust positon to exclude label from clearing.
     cursorX = cursorX + label.length() * fontWidth;
-    int eraseWidth = fontWidth * 6;
+    int eraseWidth = fontWidth * 8;
+
     String info = filesizeFormatted;
 
     // remove previous text
     Rect_t area = display_rect(
-        cursorX-fontWidth,
+        cursorX,
         statusY,
         eraseWidth,
         status_height);
@@ -829,20 +837,19 @@ void WP_render_dynamic_status(bool firstRender)
     writeln((GFXfont *)&systemFont, info.c_str(), &cursorX, &cursorY, NULL);
 
     // update word count only if it changed.
-    if (wordcount != lastWordCount || firstRender)
+    if (wordcount != lastWordCount || justCleared)
     {
         lastWordCount = wordcount;
         // Redraw the word count -T.
         cursorX = 400;
         String wordcountFormatted = formatNumber(wordcount);
-        label = "W: ";
+        label = "W:";
         cursorX = cursorX + label.length() * fontWidth;
-        eraseWidth = fontWidth * 6;
         info = wordcountFormatted;
 
         // remove previous text
         area = display_rect(
-            cursorX-fontWidth,
+            cursorX,
             statusY,
             eraseWidth,
             status_height);
@@ -882,6 +889,7 @@ void WP_keyboard(char key)
     else if (key == 5)
     {
         clear_full = true;
+        
         Editor::getInstance().saveFile();
     }
 

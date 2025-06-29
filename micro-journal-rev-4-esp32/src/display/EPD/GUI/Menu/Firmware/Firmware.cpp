@@ -46,7 +46,7 @@ void Firmware_keyboard(char key)
     const char *firmware_filename = "/firmware_rev_6.bin";
 #endif
 #ifdef ENV_EPAPER
-    const char *firmware_filename = "/firmware_rev_7.bin";
+    const char *firmware_filename = "/firmware.bin";
 #endif
 
     File firmwareFile = SD.open(firmware_filename);

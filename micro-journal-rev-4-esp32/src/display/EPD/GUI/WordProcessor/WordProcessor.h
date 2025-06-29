@@ -29,7 +29,7 @@ void WP_render_static_status();
 // Renders the character and word count to the status bar
 // Parameter bool firstRender is true when the file is being
 // loaded for the first time or after a manual refresh of the screen -T.
-void WP_render_dynamic_status(bool firstRender);
+void WP_render_dynamic_status();
 void WP_check_saved();
 void WP_check_sleep();
 
