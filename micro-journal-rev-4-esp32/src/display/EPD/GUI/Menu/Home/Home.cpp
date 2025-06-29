@@ -223,7 +223,6 @@ void Home_keyboard(char key)
       app["config"]["file_index"] = file_index;
      config_save();
      // load editor
-     Editor::getInstance().loadFile(format("/%d.txt", file_index));
      
     }
     // DOWN arrow pressed
@@ -234,14 +233,12 @@ void Home_keyboard(char key)
        file_index++;
       app["config"]["file_index"] = file_index;
      config_save();
-     // load editor
-     Editor::getInstance().loadFile(format("/%d.txt", file_index));
    
     }
-    else if (key == '\n')
-          app["screen"] = WORDPROCESSOR;
+    else if (key == '\n'){
+        app["screen"] = WORDPROCESSOR;
 
- 
+    } 
     else if (key > 47 && key < 58 )
     {
         // save config

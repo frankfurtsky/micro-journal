@@ -46,7 +46,7 @@ void Sleep_render()
     sleep_rendered = true;
     
      // Go to Sleep mode
-    epd_poweroff_all(); */
+    epd_poweroff_all();
     esp_deep_sleep_start();
    
 }

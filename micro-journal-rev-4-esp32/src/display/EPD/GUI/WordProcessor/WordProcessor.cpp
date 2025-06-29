@@ -228,9 +228,9 @@ void WP_render_fileSavedStatus(String fileStatus)
     int cursorY = statusY + status_height - 8;
     // clear the status area
     Rect_t area = display_rect(
-        cursorX-fontWidth,
+        cursorX-10,
         statusY,
-        175,
+        190,
         status_height);
 
     //

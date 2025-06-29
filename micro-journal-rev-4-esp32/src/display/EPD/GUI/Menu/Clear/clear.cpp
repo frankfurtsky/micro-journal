@@ -9,7 +9,7 @@
 //
 void Clear_setup()
 {
-      
+      Menu_clear();
 }
 
 //
