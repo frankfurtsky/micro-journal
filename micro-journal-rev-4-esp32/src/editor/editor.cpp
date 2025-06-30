@@ -1,10 +1,11 @@
 #include "editor.h"
 #include "app/app.h"
 #include "display/display.h"
+#include "keyboard/keyboard.h"
+
 //
 #include <FS.h>
 #include <SD.h>
-#define DEL 0x4C
 
 // Given the fileName, go through the loading process
 // initialize FileBuffer and ScreenBuffer
@@ -220,6 +221,25 @@ void Editor::keyboard(char key)
             //
             loadFile(fileBuffer.fileName);
         }
+    }
+    else if (key == ALT_LEFT || key == ALT_RIGHT)
+    {
+        // if ALT + LEFT or ALT + RIGHT
+        // then move the cursor to the start of the word
+        // or to the end of the word
+        if (key == ALT_LEFT)
+        {
+            fileBuffer.moveCursorOneWordLeft();
+        }
+        else if (key == ALT_RIGHT)
+        {
+            fileBuffer.moveCursorOneWordRight();
+        }
+
+        // The cursor was moved,
+        // so update the screen buffer - .T
+        screenBuffer.Update(fileBuffer, false);
+        
     }
 
     //////////////////////////

@@ -149,7 +149,16 @@ GFXfont *display_EPD_font()
 {
     return (GFXfont *)&monospace;
 }
-
+int get_fontwidth()
+{
+    GFXfont *font = display_EPD_font();
+    return font->glyph[0].advance_x;
+}
+int get_lineheight()
+{
+    GFXfont *font = display_EPD_font();
+    return font->advance_y;
+}
 // assign safe rect that constraints inside the range
 Rect_t display_rect(int x, int y, int width, int height)
 {
@@ -185,10 +194,10 @@ Rect_t display_rect(int x, int y, int width, int height)
 // DISPLAY CONFIGURATION
 int _x_init = 10;
 int _y_init = 10;
-int _line_height = 50;
+int _line_height = get_lineheight(); // 50;
 int _x_pos = 0;
 int _y_pos = 0;
-int _font_width = 30;
+int _font_width = get_fontwidth(); //30;
 
 void display_initialize(int x_init, int y_init, int line_height, int font_width)
 {

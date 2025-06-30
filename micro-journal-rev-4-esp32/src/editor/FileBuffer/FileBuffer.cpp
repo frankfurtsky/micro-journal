@@ -2,9 +2,6 @@
 #include "app/app.h"
 #include "display/display.h"
 
-//
-#include <FS.h>
-#include <SD.h>
 
 //
 int FileBuffer::getSeekPos()
@@ -237,7 +234,7 @@ int FileBuffer::getWordCountBuffer()
     bool inWord = false;
 
     for (size_t i = 0; buffer[i] != '\0'; ++i) {
-        if (std::isalnum(buffer[i])) {
+        if (isAlphaNumeric(buffer[i])) {
             if (!inWord) {
                 inWord = true;
                 ++count;
@@ -431,6 +428,38 @@ void FileBuffer::removeLastWord()
 
     //
     debug_log("FileBuffer::removeLastWord %d\n", cursorPos);
+}
+
+void FileBuffer::moveCursorOneWordLeft()
+{
+  if (cursorPos == 0) return; // Already at start
+
+  // Move back over any trailing spaces (if cursor is in whitespace)
+  while (cursorPos > 0 && !isgraph((unsigned char)buffer[cursorPos-1]) ) {
+    cursorPos--;
+  }
+
+  // Move back over word characters until space or start of buffer
+  while (cursorPos > 0 && isgraph((unsigned char)buffer[cursorPos-1])) {
+    cursorPos--;
+  }
+}
+
+void FileBuffer::moveCursorOneWordRight()
+{
+  int length = bufferSize;
+
+  if (cursorPos >= length) return; // Already at end
+
+  // Move over current word characters (if in a word)
+  while (cursorPos < length && isgraph(buffer[cursorPos])) {
+    cursorPos++;
+  }
+
+  // Move over any spaces after the word
+  while (cursorPos < length && !isgraph(buffer[cursorPos])) {
+    cursorPos++;
+  }
 }
 
 //

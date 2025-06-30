@@ -74,6 +74,8 @@ public:
     void removeLastChar();
     void removeCharAtCursor();
     void removeLastWord();
+    void moveCursorOneWordLeft();
+    void moveCursorOneWordRight();
     
 
     //

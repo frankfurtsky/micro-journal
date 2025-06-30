@@ -94,7 +94,7 @@ void keyboard_hid_pressed(uint8_t keycode, uint8_t modifier)
 
     // When backspace key is pressed
     // initiate backspace timer
-    if (keycode == 0x2a)
+    if (keycode == HID_KEY_BACKSPACE)
     {
         keyboard_backspace_last_set(millis() + 500);
         keyboard_backspace_pressed_set(true);
@@ -105,7 +105,7 @@ void keyboard_hid_pressed(uint8_t keycode, uint8_t modifier)
     // MENU
     //
     // ESC key is MENU button
-    if (keycode == 0x29)
+    if (keycode == HID_KEY_ESCAPE)
     {
         display_keyboard(MENU);
         return;
@@ -122,10 +122,27 @@ void keyboard_hid_pressed(uint8_t keycode, uint8_t modifier)
 
     bool ctl = (modifier & KEYBOARD_MODIFIER_LEFTCTRL) || (modifier & KEYBOARD_MODIFIER_RIGHTCTRL);
 
-    if (ctl && keycode ==0x2a){
+    // If ALT + Left Arrow is pressed
+    if (alt && keycode == HID_KEY_ARROW_LEFT)
+    {
+        // send right arrow key
+        display_keyboard(ALT_LEFT);
+        return;
+    }
+    // If ALT + Right Arrow is pressed
+    else if (alt && keycode == HID_KEY_ARROW_RIGHT)
+    {
+        // send right arrow key
+        display_keyboard(ALT_RIGHT);
+        return;
+    }
+
+    // If CTRL + Backspace is pressed
+    else if (ctl && keycode ==0x2a){
       display_keyboard(DEL);
         return;
     }
+    // IF CTRL + 
 
     // Translate the Keycode to ASCII
     JsonDocument &app = app_status();

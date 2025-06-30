@@ -20,13 +20,14 @@ const int cols = 47;
 const int rows = 7;
 
 // status bar
-const int status_height = 35;
-const int statusY = EPD_HEIGHT - status_height - 5;
+const int status_height = display_lineheight() ;
+const int statusY = EPD_HEIGHT - status_height ;
+#define STATUSBAR_INFO_Y_OFFSET 10
 
-// font charecteristics - T.
+/* // font charecteristics - T.
 const int fontNewLineSize = display_EPD_font()->advance_y;
 const int fontWidth = display_EPD_font()->glyph->advance_x;
-
+ */
 // clear screen
 static bool clear_full = false;
 
@@ -107,11 +108,11 @@ void WP_render()
 
     // Bottom Status
     WP_render_status();
-    // BLINK CURSOR
-    WP_render_cursor();
-
+    
     // RENDER TEXT
     WP_render_text();
+    // BLINK CURSOR
+    WP_render_cursor();
 
     justCleared = false;
 }
@@ -193,9 +194,9 @@ void WP_clear_below_line(int cursorLine)
     if (relativeLine < rows)
     {
 
-        int startPositionNextLine = (15 * relativeLine) + (relativeLine * fontNewLineSize) + fontNewLineSize;
+        int startPositionNextLine =relativeLine * display_lineheight() + display_lineheight();
         int heightRemainingText = EPD_HEIGHT - startPositionNextLine - status_height;
-        app_log("Font size: %d, cursorLine %d, startLine %d \n ", fontNewLineSize, cursorLine, startLine);
+        
         // Clear the area below the current line
         Rect_t area = display_rect(
             0, startPositionNextLine,
@@ -225,11 +226,11 @@ void WP_render_fileSavedStatus(String fileStatus)
     
     int cursorX = 650;
     // status start Y position
-    int cursorY = statusY + status_height - 8;
+    int cursorY = statusY + status_height - STATUSBAR_INFO_Y_OFFSET;
     // clear the status area
     Rect_t area = display_rect(
         cursorX-10,
-        statusY,
+        statusY+STATUSBAR_INFO_Y_OFFSET,
         190,
         status_height);
 
@@ -563,8 +564,8 @@ void WP_render_cursor()
     JsonDocument &app = app_status();
 
     // don't render at the round when screen is cleared
-    // if (cleared)
-    //  return;
+    if (justCleared)
+      return;
 
     // Cursor information
     static int renderedCursorX = -1;
@@ -584,15 +585,16 @@ void WP_render_cursor()
     // Calculate Cursor X position
     // reached the line where cursor is
     // distance X is cursorPos - pos
-    int cursorX = MARGIN_X;
-    if (Editor::getInstance().fileBuffer.buffer[max(cursorPos - 1, 0)] != '\n' && cursorLinePos != 0)
-    {
-        // where to display the cursor
-        cursorX = MARGIN_X + cursorLinePos * display_fontwidth() + 5;
+        int cursorX = MARGIN_X;
 
-        //
-        // debug_log("WP_render_cursor::cursorX %d\n", cursorX);
-    }
+        if (Editor::getInstance().fileBuffer.buffer[max(cursorPos - 1, 0)] != '\n' && cursorLinePos != 0)
+        {
+            // where to display the cursor
+            cursorX = MARGIN_X + cursorLinePos * display_fontwidth(); //* fontWidth;
+
+            //
+            // debug_log("WP_render_cursor::cursorX %d\n", cursorX);
+        }
 
     // Delete previous cursor line
     if (cursorPos != cursorPos_prev)
@@ -709,7 +711,7 @@ void WP_render_status()
     JsonDocument &app = app_status();
 
     // status start Y position
-    int cursorY = statusY + status_height - 8;
+    int cursorY = statusY + status_height - STATUSBAR_INFO_Y_OFFSET;
 
     
     static size_t filesize_prev = 0;
@@ -779,8 +781,12 @@ void WP_render_static_status()
     JsonDocument &app = app_status();
     // File Index
     int cursorX = 25;
+    int cursorY = statusY;
+    // Draw a line
+    epd_draw_hline(0, cursorY, EPD_WIDTH, 0, display_EPD_framebuffer());
     // status start Y position
-    int cursorY = statusY + status_height - 8;
+    cursorY = statusY + status_height - STATUSBAR_INFO_Y_OFFSET;
+    
     String label = format("FILE %d", app["config"]["file_index"].as<int>());
     writeln((GFXfont *)&systemFont, label.c_str(), &cursorX, &cursorY, display_EPD_framebuffer());
 
@@ -812,22 +818,22 @@ void WP_render_dynamic_status()
     // Char count C:
     int cursorX = 200;
     // status start Y position
-    int cursorY = statusY + status_height - 8;
+    int cursorY = statusY + status_height - STATUSBAR_INFO_Y_OFFSET;
 
     // redraw the new number
     // Changed - T.
     String filesizeFormatted = formatNumber(filesize);
     String label = "C:";
     // Adjust positon to exclude label from clearing.
-    cursorX = cursorX + label.length() * fontWidth;
-    int eraseWidth = fontWidth * 8;
+    cursorX = cursorX + label.length() * display_fontwidth();// fontWidth;
+    int eraseWidth = display_fontwidth() * 8; //fontWidth * 8;
 
     String info = filesizeFormatted;
 
     // remove previous text
     Rect_t area = display_rect(
         cursorX,
-        statusY,
+        statusY + STATUSBAR_INFO_Y_OFFSET,
         eraseWidth,
         status_height);
 
@@ -844,19 +850,20 @@ void WP_render_dynamic_status()
         cursorX = 400;
         String wordcountFormatted = formatNumber(wordcount);
         label = "W:";
-        cursorX = cursorX + label.length() * fontWidth;
+        cursorX = cursorX + label.length() * display_fontwidth();// fontWidth;
         info = wordcountFormatted;
 
         // remove previous text
         area = display_rect(
             cursorX,
-            statusY,
+            statusY + STATUSBAR_INFO_Y_OFFSET,
             eraseWidth,
             status_height);
 
         epd_poweron();
         epd_clear_quick(area, 4, 50);
-
+        // Offset the positon for clarity
+        cursorX = cursorX + 3;
         writeln((GFXfont *)&systemFont, info.c_str(), &cursorX, &cursorY, NULL);
     }
     epd_poweroff_all();

@@ -12,6 +12,8 @@
 #define MENU 0x6
 #define CTL 0x01 || 0x10
 #define DEL 0x4C
+#define ALT_LEFT  50
+#define ALT_RIGHT 51
 
 void keyboard_setup();
 void keyboard_loop();
